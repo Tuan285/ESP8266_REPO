@@ -13,10 +13,10 @@
 
 #define BLYNK_PRINT Serial
 
-char ssid[] = "NGOC XUAN";
-char pass[] = "01021967";
+char ssid[] = "HAI-TRAN";
+char pass[] = "HT682663";
 
-BlynkTimer timerBlynk, timerData, timerPzem;
+BlynkTimer timerBlynk, timerData, timerPzem, timerReconnect;
 
 #define VoltDC V5
 #define CurrDC V4
@@ -79,7 +79,7 @@ void setup()
   timerBlynk.setInterval(2000L, myTimerPush);
   timerPzem.setInterval(1000L, ReadPzem);
   timerData.setInterval(1500L, myTimerData);
-
+timerReconnect.setInterval(3000L, connectionstatus);
   DC.voltage = 0;
   DC.current = 0;
   DC.power = 0;
@@ -97,6 +97,7 @@ void loop()
   timerBlynk.run();
   timerData.run();
   timerPzem.run();
+  timerReconnect.run();
 }
 void ReadPzem(void)
 {
@@ -299,4 +300,29 @@ void resetEnergyPzem017(uint8_t addSlave)
   softSerial.write(lowByte(u16CRC));
   softSerial.write(highByte(u16CRC));
   delay(1000);
+}
+void connectionstatus() {
+  
+  if ((WiFi.status() != WL_CONNECTED) ) {
+    Serial.println("Reconnecting to WiFi...");
+    WiFi.disconnect();
+    WiFi.begin(ssid, pass);
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(100);
+      Serial.print(".");
+    }
+    Serial.println();
+    Serial.println(WiFi.localIP());
+    //Alternatively, you can restart your board
+    //ESP.restart();
+  } else {
+    Serial.println("wifi OK");
+  }
+
+  if (!Blynk.connected() ) {
+    Serial.println("Lost Blynk server connection");
+    Blynk.connect();
+  } else {
+    Serial.println("Blynk OK");
+  }
 }
